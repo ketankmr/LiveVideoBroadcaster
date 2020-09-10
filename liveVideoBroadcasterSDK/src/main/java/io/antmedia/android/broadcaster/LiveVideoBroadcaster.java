@@ -447,7 +447,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
             if (zoom >=0 && zoom <= maxZoom) {
                 Log.d("Sensy_Cam","zoom = "+zoom);
-                parameters.setPreviewSize(zoom);
+                parameters.setZoom(zoom);
             }
         }
         sCameraProxy.setParameters(parameters);
