@@ -1,7 +1,10 @@
 package io.antmedia.android.broadcaster;
 
 import android.app.Activity;
+import android.hardware.Camera;
 import android.opengl.GLSurfaceView;
+
+import androidx.lifecycle.MutableLiveData;
 
 import java.util.ArrayList;
 
@@ -107,5 +110,17 @@ public interface ILiveVideoBroadcaster {
      */
     void stopBroadcasting();
 
+    void toggleTorch();
 
+    int getCurrentCameraId();
+
+    void toggleZoom(boolean zoomIn);
+
+    void takePicture(Camera.PictureCallback callback);
+
+    void autoFocus (Camera.AutoFocusCallback callback);
+
+    MutableLiveData<Boolean> getTorchStateLiveData();
+
+    MutableLiveData<Boolean> getRecordingState();
 }

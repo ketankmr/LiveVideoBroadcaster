@@ -10,6 +10,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.net.ConnectivityManager;
@@ -17,13 +19,19 @@ import android.net.NetworkInfo;
 import android.opengl.GLSurfaceView;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Build;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Process;
-import android.support.annotation.Nullable;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import androidx.annotation.Nullable;
+
+import com.google.android.material.snackbar.Snackbar;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.MutableLiveData;
+
 import android.util.Log;
 import android.view.Surface;
 import android.view.View;
@@ -66,6 +74,9 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
     private ArrayList<Resolution> choosenPreviewsSizeList;
     private final IBinder mBinder = new LocalBinder();
     private int currentCameraId= Camera.CameraInfo.CAMERA_FACING_BACK;
+    private MutableLiveData<Boolean> torchStateLiveData = new MutableLiveData<>();
+    private boolean torchState = false;
+    private MutableLiveData<Boolean> broadcastState = new MutableLiveData<>();
 
     private int frameRate = 20;
     public static final int PERMISSIONS_REQUEST = 8954;
@@ -122,11 +133,24 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
     public void setDisplayOrientation() {
         if (sCameraProxy != null) {
-
             sCameraProxy.setDisplayOrientation(getCameraDisplayOrientation());
-            if (!isConnected()) {
+            if(!isConnected()) {
                 setRendererPreviewSize();
             }
+        }
+    }
+
+    @Override
+    public void takePicture(Camera.PictureCallback callback){
+        if(sCameraProxy!=null){
+            sCameraProxy.takePicture(callback);
+        }
+    }
+
+    @Override
+    public void autoFocus(Camera.AutoFocusCallback callback){
+        if (sCameraProxy!=null){
+            sCameraProxy.autoFocus(callback);
         }
     }
 
@@ -182,6 +206,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
             connectivityManager = (ConnectivityManager) this.getSystemService(
                     Context.CONNECTIVITY_SERVICE);
+
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -326,6 +351,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         catch (Exception e) {
             e.printStackTrace();
         }
+        broadcastState.postValue(isRecording);
         return isRecording;
     }
 
@@ -368,8 +394,8 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
                 }
                 i++;
             }
+            broadcastState.postValue(false);
         }
-
     }
 
     public void setResolution(Resolution size) {
@@ -382,6 +408,64 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         sCameraProxy.startPreview();
         previewSize = size;
         setRendererPreviewSize();
+    }
+
+    public void  toggleTorch() {
+        Camera.Parameters parameters = sCameraProxy.getParameters();
+        if(currentCameraId== Camera.CameraInfo.CAMERA_FACING_BACK) {
+            if (Camera.Parameters.FLASH_MODE_OFF.equals(parameters.getFlashMode())) {
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+            } else {
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+            }
+            sCameraProxy.setParameters(parameters);
+            torchState=Camera.Parameters.FLASH_MODE_TORCH.equals(parameters.getFlashMode());
+            torchStateLiveData.postValue(torchState);
+        }else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            CameraManager mCameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            try {
+                String  mCameraId = mCameraManager.getCameraIdList()[0];
+                    mCameraManager.setTorchMode(mCameraId, !torchState);
+                torchState=!torchState;
+                torchStateLiveData.postValue(torchState);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void toggleZoom(boolean zoomIn){
+        Camera.Parameters parameters = sCameraProxy.getParameters();
+        int maxZoom = parameters.getMaxZoom();
+        if (parameters.isZoomSupported()) {
+            int zoom = parameters.getZoom();
+            if(zoomIn){
+                zoom+=maxZoom/4;
+            }else {
+                zoom-=maxZoom/4;
+            }
+
+            if (zoom >=0 && zoom <= maxZoom) {
+                Log.d("Sensy_Cam","zoom = "+zoom);
+                parameters.setPreviewSize(zoom);
+            }
+        }
+        sCameraProxy.setParameters(parameters);
+    }
+
+    @Override
+    public int getCurrentCameraId() {
+        return currentCameraId;
+    }
+
+    @Override
+    public MutableLiveData<Boolean> getTorchStateLiveData() {
+        return torchStateLiveData;
+    }
+
+    @Override
+    public MutableLiveData<Boolean> getRecordingState() {
+        return broadcastState;
     }
 
     private void setRendererPreviewSize()
@@ -462,6 +546,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
                     if (sCameraProxy.isCameraAvailable()) {
                         System.out.println("--- camera opened --- ");
                         parameters = sCameraProxy.getParameters();
+                        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
                         if (parameters != null) {
                             setCameraParameters(parameters);
 
@@ -733,6 +818,8 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
     }
 
     public void changeCamera() {
+        torchState=false;
+        torchStateLiveData.postValue(torchState);
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT)) {
             Snackbar.make(mGLView, R.string.only_one_camera_exists, Snackbar.LENGTH_LONG).show();
             return;

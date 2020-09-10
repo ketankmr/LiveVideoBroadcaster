@@ -5,6 +5,8 @@ import android.media.MediaRecorder;
 import android.os.Message;
 import android.util.Log;
 
+import java.util.Arrays;
+
 import io.antmedia.android.broadcaster.encoder.AudioHandler;
 
 /**
@@ -53,7 +55,7 @@ class AudioRecorderThread extends Thread {
         while ((bufferReadResult = audioRecord.read(audioData[i], 0, audioData[i].length)) > 0) {
 
             data = audioData[i];
-
+            Log.d("Audio_Test",new String(data));
             Message msg = Message.obtain(audioHandler, AudioHandler.RECORD_AUDIO, data);
             msg.arg1 = bufferReadResult;
             msg.arg2 = (int)(System.currentTimeMillis() - startTime);
@@ -82,5 +84,4 @@ class AudioRecorderThread extends Thread {
             audioRecord = null;
         }
     }
-
 }

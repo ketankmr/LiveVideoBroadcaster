@@ -5,6 +5,7 @@ package io.antmedia.android.broadcaster.encoder;
  */
 
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.opengl.EGL14;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;

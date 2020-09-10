@@ -33,6 +33,7 @@ public class CameraProxy {
     private static final int OPEN_CAMERA = 12;
     private static final int SET_DISPLAY_ORIENTATION = 13;
     private static final int SET_PREVIEW_TEXTURE = 14;
+    private static final int TAKE_PICTURE = 15;
     private final HandlerThread ht;
 
     private Camera _camera;
@@ -71,6 +72,9 @@ public class CameraProxy {
         _handler.obtainMessage(AUTOFOCUS, callback).sendToTarget();
     }
 
+    public void takePicture(Camera.PictureCallback callback){
+        _handler.obtainMessage(TAKE_PICTURE,callback).sendToTarget();
+    }
     public void cancelAutoFocus() {
         _handler.sendEmptyMessage(CANCEL_AUTOFOCUS);
     }
@@ -186,7 +190,8 @@ public class CameraProxy {
                     case STOP_PREVIEW:
                         _camera.stopPreview();
                         break;
-
+                    case TAKE_PICTURE:
+                        _camera.takePicture(null,null,(Camera.PictureCallback)msg.obj);
                     default:
                         Log.e(TAG, "Invalid message: " + msg.what);
                         break;

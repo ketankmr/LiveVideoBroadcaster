@@ -16,13 +16,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.widget.ContentLoadingProgressBar;
-import android.support.v7.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.core.widget.ContentLoadingProgressBar;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -30,6 +30,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.Timer;
@@ -72,13 +74,14 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
                 mLiveVideoBroadcaster.init(LiveVideoBroadcasterActivity.this, mGLView);
                 mLiveVideoBroadcaster.setAdaptiveStreaming(true);
             }
-            mLiveVideoBroadcaster.openCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
+            mLiveVideoBroadcaster.openCamera(Camera.CameraInfo.CAMERA_FACING_BACK);
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             mLiveVideoBroadcaster = null;
         }
     };
+
 
 
     @Override
@@ -124,6 +127,7 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         //this lets activity bind
+        Log.d("Sensy_Cam","binding broadcast service");
         bindService(mLiveVideoBroadcasterServiceIntent, mConnection, 0);
 
     }
@@ -205,6 +209,10 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
 
     public void showSetResolutionDialog(View v) {
 
+        if(mLiveVideoBroadcaster!=null){
+            mLiveVideoBroadcaster.toggleTorch();
+            return;
+        }
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         Fragment fragmentDialog = getSupportFragmentManager().findFragmentByTag("dialog");
         if (fragmentDialog != null) {
@@ -380,5 +388,18 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
         }
 
         return String.valueOf(number);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if(keyCode==KeyEvent.KEYCODE_VOLUME_UP){
+            mLiveVideoBroadcaster.toggleZoom(true);
+            return true;
+        }else if(keyCode==KeyEvent.KEYCODE_VOLUME_DOWN){
+            mLiveVideoBroadcaster.toggleZoom(false);
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+
     }
 }

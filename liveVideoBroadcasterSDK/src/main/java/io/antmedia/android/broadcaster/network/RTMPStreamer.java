@@ -1,14 +1,9 @@
 package io.antmedia.android.broadcaster.network;
 
-import android.app.Service;
-import android.content.Intent;
-import android.os.Binder;
 import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.Log;
 
 
@@ -16,8 +11,6 @@ import net.butterflytv.rtmp_client.RTMPMuxer;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-
-import io.antmedia.android.broadcaster.network.IMediaMuxer;
 
 /**
  * Created by faraklit on 09.02.2016.
