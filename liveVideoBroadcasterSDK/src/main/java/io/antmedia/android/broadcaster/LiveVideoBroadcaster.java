@@ -453,6 +453,25 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         sCameraProxy.setParameters(parameters);
     }
 
+    public void pinchZoom(boolean zoomIn){
+        Camera.Parameters parameters = sCameraProxy.getParameters();
+        int maxZoom = parameters.getMaxZoom();
+        if (parameters.isZoomSupported()) {
+            int zoom = parameters.getZoom();
+            if(zoomIn){
+                zoom++;
+            }else {
+                zoom--;
+            }
+
+            if (zoom >=0 && zoom <= maxZoom) {
+                Log.d("Sensy_Cam","zoom = "+zoom);
+                parameters.setZoom(zoom);
+            }
+        }
+        sCameraProxy.setParameters(parameters);
+    }
+
     @Override
     public int getCurrentCameraId() {
         return currentCameraId;

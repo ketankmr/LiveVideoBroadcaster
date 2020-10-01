@@ -115,6 +115,8 @@ public interface ILiveVideoBroadcaster {
     int getCurrentCameraId();
 
     void toggleZoom(boolean zoomIn);
+    
+    void pinchZoom(boolean zoomIn);
 
     void takePicture(Camera.PictureCallback callback);
 
