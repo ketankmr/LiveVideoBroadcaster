@@ -122,6 +122,10 @@ public interface ILiveVideoBroadcaster {
 
     void autoFocus (Camera.AutoFocusCallback callback);
 
+    void toggleAudio();
+
+    void toggleVideo();
+
     MutableLiveData<Boolean> getTorchStateLiveData();
 
     MutableLiveData<Boolean> getRecordingState();

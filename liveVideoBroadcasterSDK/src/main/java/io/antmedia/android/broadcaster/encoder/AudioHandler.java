@@ -46,23 +46,25 @@ public class AudioHandler extends Handler {
             return;
         }
 
-
-
-        switch (msg.what) {
-            case END_OF_STREAM:
-                if (audioEncoder.getState() == Thread.State.RUNNABLE) {
-                    Log.d("audio handler", "stop audio encoding...");
-                    audioEncoder.stopEncoding();
-                    removeMessages(RECORD_AUDIO);
-                }
-                break;
-            case RECORD_AUDIO:
-                        /* msg.obj is the byte array buffer
-                         * msg.arg1 is the length of the byte array
-                         * msg.arg2 is the timestamp of frame in milliseconds
-                         */
-                audioEncoder.encodeAudio((byte[]) msg.obj, msg.arg1, msg.arg2 * 1000);
-                break;
+        try {
+            switch (msg.what) {
+                case END_OF_STREAM:
+                    if (audioEncoder.getState() == Thread.State.RUNNABLE) {
+                        Log.d("audio handler", "stop audio encoding...");
+                        audioEncoder.stopEncoding();
+                        removeMessages(RECORD_AUDIO);
+                    }
+                    break;
+                case RECORD_AUDIO:
+                    /* msg.obj is the byte array buffer
+                     * msg.arg1 is the length of the byte array
+                     * msg.arg2 is the timestamp of frame in milliseconds
+                     */
+                    audioEncoder.encodeAudio((byte[]) msg.obj, msg.arg1, msg.arg2 * 1000);
+                    break;
+            }
+        }catch (Exception e){
+            Log.d("Sensy_Cam","Audio handler -"+e.getMessage());
         }
     }
 }

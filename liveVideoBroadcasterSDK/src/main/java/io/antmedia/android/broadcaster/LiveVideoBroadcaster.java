@@ -128,7 +128,6 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         });
         mGLView.onPause();
         mGLView.setOnTouchListener(null);
-
     }
 
     public void setDisplayOrientation() {
@@ -172,15 +171,19 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
     @Override
     public void onCreate() {
         super.onCreate();
-
-
     }
 
     @Override
     public void onDestroy() {
-        audioHandlerThread.quitSafely();
-        mRtmpHandlerThread.quitSafely();
-        mCameraHandler.invalidateHandler();
+        if(audioHandlerThread!=null) {
+            audioHandlerThread.quitSafely();
+        }
+        if(mRtmpStreamer!=null) {
+            mRtmpHandlerThread.quitSafely();
+        }
+        if(mCameraHandler!=null) {
+            mCameraHandler.invalidateHandler();
+        }
         super.onDestroy();
     }
 
@@ -311,7 +314,6 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
                                     }
                                 });
                                 frameQueueIncreased = 0;
-
                             }
 
                             if (frameQueueIncreased < -10) {
@@ -339,14 +341,10 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
                                 frameQueueIncreased = 0;
                             }
-
-
-
                         }
                     }, 0, 500);
                 }
             }
-
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -434,6 +432,11 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         }
     }
 
+    public void toggleAudio(){
+        if(audioThread!=null){
+            audioThread.toggleAudio();
+        }
+    }
     public void toggleZoom(boolean zoomIn){
         Camera.Parameters parameters = sCameraProxy.getParameters();
         int maxZoom = parameters.getMaxZoom();
@@ -511,13 +514,15 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
     @Override
     public void handleSetSurfaceTexture(SurfaceTexture st) {
-        if (sCameraProxy != null && !context.isFinishing() && st != null) {
-            {
+        try {
+            if (sCameraProxy != null && !context.isFinishing() && st != null) {
                 st.setOnFrameAvailableListener(this);
                 sCameraProxy.stopPreview();
                 sCameraProxy.setPreviewTexture(st);
                 sCameraProxy.startPreview();
             }
+        }catch (Exception e){
+            Log.d("Sensy_Cam","Surface Texture -"+e.getMessage());
         }
     }
 
@@ -608,7 +613,6 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
                     Snackbar.make(mGLView, R.string.camera_not_running_properly, Snackbar.LENGTH_LONG)
                             .show();
                 }
-
             }
         }.execute(currentCameraId);
     }
@@ -626,7 +630,6 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
             ex.printStackTrace();
         }
     }
-
 
     @Override
     public void setAdaptiveStreaming(boolean enable) {
@@ -680,7 +683,6 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
             resolutionIndex = choosenPreviewsSizeList.indexOf(choosenSize);
         }
 
-
         if (resolutionIndex >=0) {
             Resolution size = choosenPreviewsSizeList.get(resolutionIndex);
             parameters.setPreviewSize(size.width, size.height);
@@ -696,7 +698,6 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         if (parameters.isVideoStabilizationSupported()) {
             parameters.setVideoStabilization(true);
         }
-
         //sCameraDevice.setParameters(parameters);
         sCameraProxy.setParameters(parameters);
         Camera.Size size = parameters.getPreviewSize();
@@ -797,7 +798,6 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
                 }
             }
         }
-
         return bestRate;
     }
 

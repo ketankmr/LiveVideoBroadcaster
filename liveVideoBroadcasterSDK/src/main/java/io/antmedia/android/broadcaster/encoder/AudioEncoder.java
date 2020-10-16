@@ -3,6 +3,7 @@ package io.antmedia.android.broadcaster.encoder;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.util.Log;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -75,21 +76,25 @@ public class AudioEncoder extends Thread {
         int bufferRemaining;
 
         for (int i = 0; i < 3 ; i++) {
-            int inputBufferId = mAudioEncoder.dequeueInputBuffer(TIMEOUT_USEC);
+            try {
+                int inputBufferId = mAudioEncoder.dequeueInputBuffer(TIMEOUT_USEC);
 
-            if (inputBufferId >= 0) {
-                ByteBuffer inputBuf = mAudioInputBuffers[inputBufferId];
-                inputBuf.clear();
-                bufferRemaining = inputBuf.remaining();
-                if (bufferRemaining < length) {
-                    inputBuf.put(data, 0, bufferRemaining);
-                } else {
-                    inputBuf.put(data, 0, length);
+                if (inputBufferId >= 0) {
+                    ByteBuffer inputBuf = mAudioInputBuffers[inputBufferId];
+                    inputBuf.clear();
+                    bufferRemaining = inputBuf.remaining();
+                    if (bufferRemaining < length) {
+                        inputBuf.put(data, 0, bufferRemaining);
+                    } else {
+                        inputBuf.put(data, 0, length);
+                    }
+
+                    //length equals to inputbuffer position
+                    mAudioEncoder.queueInputBuffer(inputBufferId, 0, inputBuf.position(), pts, 0);
+                    break;
                 }
-
-                //length equals to inputbuffer position
-                mAudioEncoder.queueInputBuffer(inputBufferId, 0, inputBuf.position(), pts, 0);
-                break;
+            }catch (Exception e){
+                Log.d("Sensy_Cam","Encode audio-"+e.getMessage());
             }
             try {
                 Thread.sleep(100);

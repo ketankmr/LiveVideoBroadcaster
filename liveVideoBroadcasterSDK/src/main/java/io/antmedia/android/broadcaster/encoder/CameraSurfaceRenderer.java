@@ -217,7 +217,6 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
         // Latch the latest frame.  If there isn't anything new, we'll just re-use whatever
         // was there before.
         mSurfaceTexture.updateTexImage();
-
         // If the recording state is changing, take care of it here.  Ideally we wouldn't
         // be doing all this in onDrawFrame(), but the EGLContext sharing with GLSurfaceView
         // makes it hard to do elsewhere.
@@ -253,7 +252,7 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
                     // yay
                     break;
                 default:
-                    throw new RuntimeException("unknown status " + mRecordingStatus);
+                    Log.d("Sensy_Cam","unknown status " + mRecordingStatus);
             }
         } else {
             switch (mRecordingStatus) {
@@ -268,7 +267,7 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
                     // yay
                     break;
                 default:
-                    throw new RuntimeException("unknown status " + mRecordingStatus);
+                    Log.d("Sensy_Cam","unknown status " + mRecordingStatus);
             }
         }
 
@@ -333,7 +332,5 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
     public List<Texture2dProgram.ProgramType> getEffectList() {
         return Texture2dProgram.EFFECTS;
     }
-
-
 }
 

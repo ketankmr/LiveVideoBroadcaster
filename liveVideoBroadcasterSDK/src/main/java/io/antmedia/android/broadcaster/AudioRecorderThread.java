@@ -18,6 +18,7 @@ class AudioRecorderThread extends Thread {
     private static final String TAG = AudioRecorderThread.class.getSimpleName();
     private final int mSampleRate;
     private final long startTime;
+    private boolean isMute;
     private volatile boolean stopThread = false;
 
     private android.media.AudioRecord audioRecord;
@@ -27,6 +28,7 @@ class AudioRecorderThread extends Thread {
         this.mSampleRate = sampleRate;
         this.startTime = recordStartTime;
         this.audioHandler = audioHandler;
+        this.isMute = false;
     }
 
 
@@ -53,15 +55,11 @@ class AudioRecorderThread extends Thread {
         int i = 0;
         byte[] data;
         while ((bufferReadResult = audioRecord.read(audioData[i], 0, audioData[i].length)) > 0) {
-
-            data = audioData[i];
-            Log.d("Audio_Test",new String(data));
-            Message msg = Message.obtain(audioHandler, AudioHandler.RECORD_AUDIO, data);
-            msg.arg1 = bufferReadResult;
-            msg.arg2 = (int)(System.currentTimeMillis() - startTime);
-            audioHandler.sendMessage(msg);
-
-
+                data = isMute?new byte[3528]:audioData[i];
+                Message msg = Message.obtain(audioHandler, AudioHandler.RECORD_AUDIO,data);
+                msg.arg1 = bufferReadResult;
+                msg.arg2 = (int) (System.currentTimeMillis() - startTime);
+                audioHandler.sendMessage(msg);
             i++;
             if (i == 1000) {
                 i = 0;
@@ -73,6 +71,10 @@ class AudioRecorderThread extends Thread {
 
         Log.d(TAG, "AudioThread Finished, release audioRecord");
 
+    }
+
+    public void  toggleAudio(){
+        isMute=!isMute;
     }
 
     public void stopAudioRecording() {
