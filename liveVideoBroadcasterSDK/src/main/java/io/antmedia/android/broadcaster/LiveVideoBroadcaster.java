@@ -77,6 +77,9 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
     private MutableLiveData<Boolean> torchStateLiveData = new MutableLiveData<>();
     private boolean torchState = false;
     private MutableLiveData<Boolean> broadcastState = new MutableLiveData<>();
+    private MutableLiveData<Boolean> audioEnabledState = new MutableLiveData<>();
+    private boolean audioEnabled= true;
+    private boolean videoEnabled= true;
 
     private int frameRate = 20;
     public static final int PERMISSIONS_REQUEST = 8954;
@@ -268,7 +271,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
                 audioHandler.startAudioEncoder(mRtmpStreamer, SAMPLE_AUDIO_RATE_IN_HZ, minBufferSize);
 
-                audioThread = new AudioRecorderThread(SAMPLE_AUDIO_RATE_IN_HZ, recordStartTime, audioHandler);
+                audioThread = new AudioRecorderThread(SAMPLE_AUDIO_RATE_IN_HZ, recordStartTime, audioHandler,audioEnabled);
                 audioThread.start();
                 isRecording = true;
 
@@ -433,10 +436,22 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
     }
 
     public void toggleAudio(){
+        audioEnabled=!audioEnabled;
         if(audioThread!=null){
-            audioThread.toggleAudio();
+            audioThread.setAudioEnabled(audioEnabled);
         }
+        audioEnabledState.postValue(audioEnabled);
     }
+
+    public void toggleVideo(){
+        videoEnabled=!videoEnabled;
+    }
+
+    @Override
+    public MutableLiveData<Boolean> getAudioEnabledLiveData() {
+        return audioEnabledState;
+    }
+
     public void toggleZoom(boolean zoomIn){
         Camera.Parameters parameters = sCameraProxy.getParameters();
         int maxZoom = parameters.getMaxZoom();

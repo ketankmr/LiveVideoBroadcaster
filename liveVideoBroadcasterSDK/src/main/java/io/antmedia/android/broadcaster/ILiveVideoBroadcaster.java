@@ -126,6 +126,8 @@ public interface ILiveVideoBroadcaster {
 
     void toggleVideo();
 
+    MutableLiveData<Boolean> getAudioEnabledLiveData();
+
     MutableLiveData<Boolean> getTorchStateLiveData();
 
     MutableLiveData<Boolean> getRecordingState();

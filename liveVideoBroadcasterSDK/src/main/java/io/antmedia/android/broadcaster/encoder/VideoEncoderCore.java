@@ -182,7 +182,7 @@ public class VideoEncoderCore {
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 // should happen before receiving buffers, and should only happen once
                 if (mMuxerStarted) {
-                    throw new RuntimeException("format changed twice");
+                    return;
                 }
                 MediaFormat newFormat = mEncoder.getOutputFormat();
                 ByteBuffer sps = newFormat.getByteBuffer("csd-0");
