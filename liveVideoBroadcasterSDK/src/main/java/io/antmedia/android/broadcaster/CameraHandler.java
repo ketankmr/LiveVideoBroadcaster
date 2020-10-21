@@ -62,7 +62,7 @@ public class CameraHandler extends Handler {
                 cameraViewer.handleSetSurfaceTexture((SurfaceTexture) inputMessage.obj);
                 break;
             default:
-                throw new RuntimeException("unknown msg " + what);
+                Log.d("Seny_Cam","Camera handler :unknown msg " + what);
         }
     }
 }

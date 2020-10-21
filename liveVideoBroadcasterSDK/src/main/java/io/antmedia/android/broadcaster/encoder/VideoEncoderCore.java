@@ -154,100 +154,104 @@ public class VideoEncoderCore {
      * not recording audio.
      */
     public void drainEncoder(boolean endOfStream) {
-        if (mEncoder == null) {
-            return;
-        }
-        final int TIMEOUT_USEC = 10000;
-        if (VERBOSE) Log.d(TAG, "drainEncoder(" + endOfStream + ")");
+        try {
+            if (mEncoder == null) {
+                return;
+            }
+            final int TIMEOUT_USEC = 10000;
+            if (VERBOSE) Log.d(TAG, "drainEncoder(" + endOfStream + ")");
 
-        if (endOfStream) {
-            if (VERBOSE) Log.d(TAG, "sending EOS to encoder");
-            mEncoder.signalEndOfInputStream();
-        }
+            if (endOfStream) {
+                if (VERBOSE) Log.d(TAG, "sending EOS to encoder");
+                mEncoder.signalEndOfInputStream();
+            }
 
-        ByteBuffer[] encoderOutputBuffers = mEncoder.getOutputBuffers();
-        while (true) {
-            int encoderStatus = mEncoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
-            if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
-                // no output available yet
-                if (!endOfStream) {
-                    break;      // out of while
-                } else {
-                    if (VERBOSE) Log.d(TAG, "no output available, spinning to await EOS");
-                }
-            } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                // not expected for an encoder
-                encoderOutputBuffers = mEncoder.getOutputBuffers();
-                Log.d("VideoEncoder", "INFO_OUTPUT_BUFFERS_CHANGED");
-            } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                // should happen before receiving buffers, and should only happen once
-                if (mMuxerStarted) {
-                    return;
-                }
-                MediaFormat newFormat = mEncoder.getOutputFormat();
-                ByteBuffer sps = newFormat.getByteBuffer("csd-0");
-                ByteBuffer pps = newFormat.getByteBuffer("csd-1");
-                byte[] config = new byte[sps.limit() + pps.limit()];
-                sps.get(config, 0, sps.limit());
-                pps.get(config, sps.limit(), pps.limit());
-
-                mWriterHandler.writeVideo(config, config.length, 0);
-
-                Log.d(TAG, "encoder output format changed: " + newFormat);
-
-                mMuxerStarted = true;
-            } else if (encoderStatus < 0) {
-                Log.w(TAG, "unexpected result from encoder.dequeueOutputBuffer: " +
-                        encoderStatus);
-                // let's ignore it
-
-            } else {
-                ByteBuffer encodedData = encoderOutputBuffers[encoderStatus];
-                if (encodedData == null) {
-                    throw new RuntimeException("encoderOutputBuffer " + encoderStatus +
-                            " was null");
-                }
-
-                if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
-                    // The codec config data was pulled out and fed to the muxer when we got
-                    // the INFO_OUTPUT_FORMAT_CHANGED status.  Ignore it.
-                    if (VERBOSE) Log.d(TAG, "ignoring BUFFER_FLAG_CODEC_CONFIG");
-                    mBufferInfo.size = 0;
-                }
-
-                if (mBufferInfo.size != 0) {
-                    if (!mMuxerStarted) {
-                        throw new RuntimeException("muxer hasn't started");
-                    }
-
-                    // adjust the ByteBuffer values to match BufferInfo (not needed?)
-                    encodedData.position(mBufferInfo.offset);
-                    encodedData.limit(mBufferInfo.offset + mBufferInfo.size);
-
-                    long presentationTimeInMillis = mBufferInfo.presentationTimeUs/1000;  //convert it to milliseconds
-                    //first it should be divided to 1000 and assign value to a long
-                    //then cast it to int -
-                    // Othe wise after about 35 minutes(exceeds integer max size) presentationTime will be negative
-                    //in this assignment int presetationTime = (int)mBufferInfo.presentationTimeUs/1000;
-                    int presetationTime = (int)presentationTimeInMillis;
-                    byte[] data = getBuffer(mBufferInfo.size, mWriterHandler.getLastVideoFrameTimeStamp(), presetationTime);
-                    encodedData.get(data, 0, mBufferInfo.size);
-                    encodedData.position(mBufferInfo.offset);
-
-                    mWriterHandler.writeVideo(data, mBufferInfo.size, presetationTime);
-                }
-                mEncoder.releaseOutputBuffer(encoderStatus, false);
-
-                if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+            ByteBuffer[] encoderOutputBuffers = mEncoder.getOutputBuffers();
+            while (true) {
+                int encoderStatus = mEncoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
+                if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                    // no output available yet
                     if (!endOfStream) {
-                        Log.w(TAG, "reached end of stream unexpectedly");
+                        break;      // out of while
                     } else {
-                        if (VERBOSE) Log.d(TAG, "end of stream reached");
+                        if (VERBOSE) Log.d(TAG, "no output available, spinning to await EOS");
                     }
-                    reservedBuffers.clear();
-                    break;      // out of while
+                } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+                    // not expected for an encoder
+                    encoderOutputBuffers = mEncoder.getOutputBuffers();
+                    Log.d("VideoEncoder", "INFO_OUTPUT_BUFFERS_CHANGED");
+                } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    // should happen before receiving buffers, and should only happen once
+                    if (mMuxerStarted) {
+                        return;
+                    }
+                    MediaFormat newFormat = mEncoder.getOutputFormat();
+                    ByteBuffer sps = newFormat.getByteBuffer("csd-0");
+                    ByteBuffer pps = newFormat.getByteBuffer("csd-1");
+                    byte[] config = new byte[sps.limit() + pps.limit()];
+                    sps.get(config, 0, sps.limit());
+                    pps.get(config, sps.limit(), pps.limit());
+
+                    mWriterHandler.writeVideo(config, config.length, 0);
+
+                    Log.d(TAG, "encoder output format changed: " + newFormat);
+
+                    mMuxerStarted = true;
+                } else if (encoderStatus < 0) {
+                    Log.w(TAG, "unexpected result from encoder.dequeueOutputBuffer: " +
+                            encoderStatus);
+                    // let's ignore it
+
+                } else {
+                    ByteBuffer encodedData = encoderOutputBuffers[encoderStatus];
+                    if (encodedData == null) {
+                        throw new RuntimeException("encoderOutputBuffer " + encoderStatus +
+                                " was null");
+                    }
+
+                    if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                        // The codec config data was pulled out and fed to the muxer when we got
+                        // the INFO_OUTPUT_FORMAT_CHANGED status.  Ignore it.
+                        if (VERBOSE) Log.d(TAG, "ignoring BUFFER_FLAG_CODEC_CONFIG");
+                        mBufferInfo.size = 0;
+                    }
+
+                    if (mBufferInfo.size != 0) {
+                        if (!mMuxerStarted) {
+                            throw new RuntimeException("muxer hasn't started");
+                        }
+
+                        // adjust the ByteBuffer values to match BufferInfo (not needed?)
+                        encodedData.position(mBufferInfo.offset);
+                        encodedData.limit(mBufferInfo.offset + mBufferInfo.size);
+
+                        long presentationTimeInMillis = mBufferInfo.presentationTimeUs / 1000;  //convert it to milliseconds
+                        //first it should be divided to 1000 and assign value to a long
+                        //then cast it to int -
+                        // Othe wise after about 35 minutes(exceeds integer max size) presentationTime will be negative
+                        //in this assignment int presetationTime = (int)mBufferInfo.presentationTimeUs/1000;
+                        int presetationTime = (int) presentationTimeInMillis;
+                        byte[] data = getBuffer(mBufferInfo.size, mWriterHandler.getLastVideoFrameTimeStamp(), presetationTime);
+                        encodedData.get(data, 0, mBufferInfo.size);
+                        encodedData.position(mBufferInfo.offset);
+
+                        mWriterHandler.writeVideo(data, mBufferInfo.size, presetationTime);
+                    }
+                    mEncoder.releaseOutputBuffer(encoderStatus, false);
+
+                    if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        if (!endOfStream) {
+                            Log.w(TAG, "reached end of stream unexpectedly");
+                        } else {
+                            if (VERBOSE) Log.d(TAG, "end of stream reached");
+                        }
+                        reservedBuffers.clear();
+                        break;      // out of while
+                    }
                 }
             }
+        }catch (RuntimeException e){
+            Log.d("Sensy_Cam",""+e.getMessage());
         }
     }
 

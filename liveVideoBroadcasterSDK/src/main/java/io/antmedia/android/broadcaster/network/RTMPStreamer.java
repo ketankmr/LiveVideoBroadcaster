@@ -23,7 +23,6 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
     RTMPMuxer rtmpMuxer = new RTMPMuxer();
 
     public int frameCount;
-    public  int result = 0;
     private int lastVideoFrameTimeStamp;
     private int lastAudioFrameTimeStamp;
     private int mLastReceivedVideoFrameTimeStamp = -1;
@@ -31,6 +30,8 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
     private int lastSentFrameTimeStamp = -1;
     private Object frameSynchronized = new Object();
     private boolean isConnected = false;
+    private boolean isVideoEnabled;
+    byte[] blankFrame;
 
     public class Frame {
         byte[] data;
@@ -48,11 +49,12 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
     private ArrayList<Frame> videoFrameList = new ArrayList<>();
 
 
-    public RTMPStreamer(Looper looper) {
+    public RTMPStreamer(Looper looper,boolean isVideoEnabled) {
         super(looper);
         mLastReceivedVideoFrameTimeStamp = -1;
         mLastReceivedAudioFrameTimeStamp = -1;
         lastSentFrameTimeStamp = -1;
+        this.isVideoEnabled = isVideoEnabled;
     }
 
     public int getLastReceivedVideoFrameTimeStamp() {
@@ -338,6 +340,11 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
         synchronized (frameSynchronized) {
             return videoFrameList.size();
         }
+    }
+
+    @Override
+    public void setVideoEnabled(boolean videoEnabled) {
+        isVideoEnabled = videoEnabled;
     }
 }
 

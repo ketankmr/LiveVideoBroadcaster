@@ -55,8 +55,8 @@ class AudioRecorderThread extends Thread {
         int i = 0;
         byte[] data;
         while ((bufferReadResult = audioRecord.read(audioData[i], 0, audioData[i].length)) > 0) {
-                data = isAudioEnabled?audioData[i]:new byte[3528];
-                Message msg = Message.obtain(audioHandler, AudioHandler.RECORD_AUDIO,data);
+                data = audioData[i];
+                Message msg = Message.obtain(audioHandler, AudioHandler.RECORD_AUDIO,isAudioEnabled?data:new byte[data.length]);
                 msg.arg1 = bufferReadResult;
                 msg.arg2 = (int) (System.currentTimeMillis() - startTime);
                 audioHandler.sendMessage(msg);

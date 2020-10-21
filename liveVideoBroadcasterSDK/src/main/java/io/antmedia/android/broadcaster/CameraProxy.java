@@ -208,7 +208,7 @@ public class CameraProxy {
         }
 
         private void handleException(Message msg, RuntimeException e) {
-            Log.e(TAG, "Camera operation failed", e);
+            Log.d("Sensy_Cam", "Camera operation failed", e);
 
             if (msg.what != RELEASE && _camera != null) {
                 try {

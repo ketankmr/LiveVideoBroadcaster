@@ -78,6 +78,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
     private boolean torchState = false;
     private MutableLiveData<Boolean> broadcastState = new MutableLiveData<>();
     private MutableLiveData<Boolean> audioEnabledState = new MutableLiveData<>();
+    private MutableLiveData<Boolean> videoEnabledState = new MutableLiveData<>();
     private boolean audioEnabled= true;
     private boolean videoEnabled= true;
 
@@ -208,7 +209,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
             mRtmpHandlerThread = new HandlerThread("RtmpStreamerThread"); //, Process.THREAD_PRIORITY_BACKGROUND);
             mRtmpHandlerThread.start();
-            mRtmpStreamer = new RTMPStreamer(mRtmpHandlerThread.getLooper());
+            mRtmpStreamer = new RTMPStreamer(mRtmpHandlerThread.getLooper(),videoEnabled);
 
             connectivityManager = (ConnectivityManager) this.getSystemService(
                     Context.CONNECTIVITY_SERVICE);
@@ -445,11 +446,20 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
     public void toggleVideo(){
         videoEnabled=!videoEnabled;
+        if(mRtmpStreamer!=null){
+            mRtmpStreamer.setVideoEnabled(videoEnabled);
+        }
+        videoEnabledState.postValue(videoEnabled);
     }
 
     @Override
     public MutableLiveData<Boolean> getAudioEnabledLiveData() {
         return audioEnabledState;
+    }
+
+    @Override
+    public MutableLiveData<Boolean> getVideoEnabledLiveData() {
+        return videoEnabledState;
     }
 
     public void toggleZoom(boolean zoomIn){

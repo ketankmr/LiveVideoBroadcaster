@@ -128,6 +128,8 @@ public interface ILiveVideoBroadcaster {
 
     MutableLiveData<Boolean> getAudioEnabledLiveData();
 
+    MutableLiveData<Boolean> getVideoEnabledLiveData();
+
     MutableLiveData<Boolean> getTorchStateLiveData();
 
     MutableLiveData<Boolean> getRecordingState();
